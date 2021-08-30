@@ -34,7 +34,8 @@ if sys.platform == "linux":
             
         time.sleep(2)
         
-
+#   TO DO ###########
+#-Expand to accomodate hot plugging on windows like on linux loop above
 
 elif sys.platform == "Windows":
     arduino = serial.Serial("COM?", 115200)
