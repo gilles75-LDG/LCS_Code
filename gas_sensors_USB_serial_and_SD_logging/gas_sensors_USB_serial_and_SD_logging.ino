@@ -50,10 +50,10 @@ float hum_bme280 = 0.0;    //variable to hold BME280 Relative Humidity %
 //     Sensor board data
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-float Rs1 = 509.9;
-float Rs2 = 510.5;
-String Sens1 = "TGS2610-C00";
-String Sens2 = "TGS2611";
+float Rs1 = 508.8;//509.9;
+float Rs2 = 512.2;//510.5;
+String Sens1 = "TGS2611-E00" ;//"TGS2610-C00";
+String Sens2 =  "TGS2611-C00"; //"TGS2611";
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -336,7 +336,7 @@ String print_time(DateTime timestamp) {
   int Minute = timestamp.minute();
   int Second = timestamp.second();
 
-  sprintf(message, "%04d-%02d-02%d %02d:%02d:%02d", Year, Month, Day, Hour, Minute, Second);
+  sprintf(message, "%04d-%02d-%02d %02d:%02d:%02d", Year, Month, Day, Hour, Minute, Second);
 
   return message;
 }
