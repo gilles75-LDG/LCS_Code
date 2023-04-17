@@ -113,9 +113,9 @@ uint8_t check_card(fs::FS &fs){
 
 
 //+++++++LORA variables and constructors++++++++++++++++++++
-uint8_t len = 27;
-const uint8_t buffer_len = 28;   //len + 1
-uint8_t buffer[buffer_len]; //Buffer len
+//uint8_t len = 27;
+const uint8_t buffer_len = 36;   //len + 1
+uint8_t buffer[37]; //Buffer len
 uint8_t board_id = 0x01;  //Board ID
 int LORA_REQUEST =  27;  // Data request pin goes low when data is requested.
 
@@ -150,8 +150,9 @@ DateTime dt;
 float temp_bme280 = 0.0;   //variable to hold BME280 Temp
 float pres_bme280 = 0.0;   //variable to hold BME280 Pressure
 float hum_bme280 = 0.0;    //variable to hold BME280 Relative Humidity %
-int BATTERY_SENSE = 4;    //Battery Sense I/O pin (3.3V ADC)
-int battery_adc = 0;  // variable to hold ESP32 ADC read from battery divider
+const int V4_SENSE = 4;    //Battery Sense I/O pin (3.3V ADC) (ADC2_CH0)
+const int Vin_SENSE = 33;  // variable to hold ESP32 ADC read from battery divider (ADC1_CH5)
+
 
 #define WDT_TIMEOUT 15    //7 seconds timeout on watchdog
 //+++++++ 2D Array/multiple 1D arrays to hold last 'n' readings++++++++++++++++++++
@@ -177,6 +178,15 @@ float Rs2 = 512.2;//510.5;
 String Sens1 = "TGS2611-E00" ;//"TGS2610-C00";
 String Sens2 =  "TGS2611-C00"; //"TGS2611";
 
+//+---------------------------------------------------
+//-----  Battery Voltage data-------------------------
+//-------------------------------------------------
+
+int V12_reading = 0;
+int V4_reading = 0;
+
+float V12_batt = 0.0;  //large battery voltage 
+float V4_batt = 0.0;  //small battery voltage
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //      SETUP
@@ -191,7 +201,7 @@ void setup() {
   //  pinMode(CScard, OUTPUT);                //SD card CS pin
   pinMode(LORA_REQUEST, INPUT_PULLUP);
   buffer[1] = board_id;
-  buffer[0] = len;
+  buffer[0] = buffer_len;
 
 
   //Initialize serial communication through USB
@@ -334,7 +344,11 @@ void loop() {
   //  sensorValue = analogRead(sensorPin);
   //
 
-
+//----Read battery voltages
+  V12_reading = analogRead(Vin_SENSE);
+  V12_batt = (V12_reading / 4095 ) * 3.3 * 10;
+  V4_reading = analogRead(V4_SENSE);
+  V4_batt = (V4_reading / 4095 ) * 3.3 * 2;
 
   //  char dataline[50];
   //
@@ -361,7 +375,11 @@ void loop() {
   Serial.print(",");
   Serial.print(Rs2);
   Serial.print(",");
-  Serial.println(Sens2);
+  Serial.print(Sens2);
+  Serial.print(",");
+  Serial.print(V12_batt);
+  Serial.print(",");
+  Serial.println(V4_batt);
   
   if (sd_panic) {
     Serial.println("SD card does not seem to be working!!!"); 
@@ -378,7 +396,7 @@ void loop() {
   ////      digitalWrite(RedLED, HIGH);
   //
       if (datalog) {
-        datalog.println("dt,ADC1,ADC2,temp_BME,pres_BME,hum_BME,Resistor1,Sensor1,Resistor2,Sensor2");
+        datalog.println("dt,ADC1,ADC2,temp_BME,pres_BME,hum_BME,Resistor1,Sensor1,Resistor2,Sensor2,V12_batt,V4_batt");
         Serial.println("Wrote data header");
         datalog.close();
         }
@@ -406,12 +424,16 @@ void loop() {
     datalog.print(Rs1);
     datalog.print(",");
     datalog.print(Sens1);
-          datalog.print(",");
-          datalog.print(Rs2);
-          datalog.print(",");
-          datalog.println(Sens2);
+    datalog.print(",");
+    datalog.print(Rs2);
+    datalog.print(",");
+    datalog.print(Sens2);
+    datalog.print(",");
+    datalog.print(V12_batt);
+    datalog.print(",");
+    datalog.println(V4_batt);
   
-          datalog.close();
+    datalog.close();
      }
   else {
   SD.end();
@@ -469,16 +491,21 @@ void loop() {
 
   //TODO --Add battery voltage, whether on feather battery or not
  //counter
- buffer[27] = (uint8_t)(counter >> 8) & 0xff;
+ //writing 2 bytes from counter
+ buffer[26] = (uint8_t)(counter >> 8) & 0xff;
 
- buffer[28] = (uint8_t)(counter & 0xff);
+ buffer[27] = (uint8_t)(counter & 0xff);
   //sd_panic 
   if (sd_panic){
-    buffer[29] = 1;
+    buffer[28] = 1;
   }
   else {
-    buffer[29] = 0;
+    buffer[28] = 0;
   }
+  converter.f = V12_batt;
+  memcpy(buffer + 29, converter.b, 4);
+  converter.f = V4_batt;
+  memcpy(buffer + 33, converter.b, 4);
   
   if (digitalRead(LORA_REQUEST) == LOW) {
     //    byte data[4] = {0x01, 0x02, 0x03, 0x04};
@@ -492,6 +519,14 @@ void loop() {
 
   counter = counter + 1;
   SD.end();
+  for (int f =0; f < 37; f++){
+//    Serial.print(buffer[27], HEX);
+//    Serial.print(" ");
+    Serial.print(buffer[f], HEX);
+    Serial.print(" ");
+//    delay(100);
+  }
+  Serial.println();
 }
 
 
