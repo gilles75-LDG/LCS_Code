@@ -69,7 +69,7 @@ with open(filename, 'w') as f:
           f.write('\n')
           f.flush()
 
-        if data_len == 38;
+        if data_len == 38:
           parent_addr, board_id, sensor_timestamp = struct.unpack('>HBL', raw_data[0:7])
           adc1, adc2 = struct.unpack('>LL', raw_data[7:15]) # Big endian
           temp, pressure, humidity = struct.unpack('<fff', raw_data[15:27]) # floats were stored as little endian on ESP32

@@ -114,8 +114,9 @@ uint8_t check_card(fs::FS &fs){
 
 //+++++++LORA variables and constructors++++++++++++++++++++
 //uint8_t len = 27;
-const uint8_t buffer_len = 36;   //len + 1
-uint8_t buffer[37]; //Buffer len
+const uint8_t data_len = 36;   //size of all the data field
+const uint8_t sending_buffer_len = data_len + 1; //Buffer len (1 extra byte for indicating the length)
+uint8_t buffer[sending_buffer_len]; 
 uint8_t board_id = 0x01;  //Board ID
 int LORA_REQUEST =  27;  // Data request pin goes low when data is requested.
 
@@ -201,7 +202,7 @@ void setup() {
   //  pinMode(CScard, OUTPUT);                //SD card CS pin
   pinMode(LORA_REQUEST, INPUT_PULLUP);
   buffer[1] = board_id;
-  buffer[0] = buffer_len;
+  buffer[0] = data_len;
 
 
   //Initialize serial communication through USB
@@ -511,7 +512,7 @@ void loop() {
     //    byte data[4] = {0x01, 0x02, 0x03, 0x04};
     Serial.println("LORA Pin is high");
     //    Serial2.write(26);
-    Serial2.write(buffer, 29);
+    Serial2.write(buffer, sending_buffer_len);
   }
   else {
     Serial.println("LORA pin is low. :(");
